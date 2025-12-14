@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RustX Counter - The Classic Example</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 60px;
+            text-align: center;
+            max-width: 500px;
+            width: 100%;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+            font-weight: 700;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 40px;
+            font-size: 1.1em;
+        }
+
+        .counter-display {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-size: 6em;
+            font-weight: 700;
+            padding: 40px;
+            border-radius: 15px;
+            margin: 30px 0;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+            transition: transform 0.1s ease;
+            min-width: 200px;
+        }
+
+        .counter-display.bump {
+            transform: scale(1.1);
+        }
+
+        .controls {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-bottom: 30px;
+        }
+
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 80px;
+            height: 80px;
+            font-size: 3em;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            font-weight: 300;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+        }
+
+        button:hover {
+            background: #764ba2;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(118, 75, 162, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 10px rgba(102, 126, 234, 0.4);
+        }
+
+        button.loading {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .reset-btn {
+            background: #e74c3c;
+            border-radius: 10px;
+            width: auto;
+            height: auto;
+            padding: 15px 40px;
+            font-size: 1em;
+            font-weight: 600;
+            margin-top: 20px;
+        }
+
+        .reset-btn:hover {
+            background: #c0392b;
+        }
+
+        .info {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            color: #666;
+            font-size: 0.9em;
+            line-height: 1.6;
+        }
+
+        .info code {
+            background: #e9ecef;
+            padding: 2px 8px;
+            border-radius: 4px;
+            color: #e74c3c;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 0.95em;
+        }
+
+        .footer {
+            margin-top: 30px;
+            color: #999;
+            font-size: 0.85em;
+        }
+
+        .footer a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .container {
+            animation: fadeIn 0.5s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>⚡ RustX Counter</h1>
+        <p class="subtitle">The Classic Example, Powered by Rust & WASM</p>
+
+        <div class="counter-display">
+            <span id="count">0</span>
+        </div>
+
+        <div class="controls">
+            <button
+                rx-action="/decrement"
+                rx-method="POST"
+                rx-target="#count"
+                rx-swap="innerHTML"
+                title="Decrement">
+                −
+            </button>
+            <button
+                rx-action="/increment"
+                rx-method="POST"
+                rx-target="#count"
+                rx-swap="innerHTML"
+                title="Increment">
+                +
+            </button>
+        </div>
+
+        <button
+            class="reset-btn"
+            rx-action="/reset"
+            rx-method="POST"
+            rx-target="#count"
+            rx-swap="innerHTML">
+            Reset Counter
+        </button>
+
+        <div class="info">
+            <strong>How it works:</strong><br>
+            Each button sends a POST request to the server (<code>/increment</code>, <code>/decrement</code>, or <code>/reset</code>).
+            The server returns just the new count value, which RustX swaps into the <code>#count</code> span.
+            <br><br>
+            No JavaScript needed. Just declarative HTML attributes.
+        </div>
+
+        <div class="footer">
+            Powered by <a href="https://github.com">rustx-wasm</a> 🦀
+        </div>
+    </div>
+
+    <!-- Load RustX -->
+    <script src="../../dist-cdn/rustx.js"></script>
+
+    <script>
+        // Optional: Add some nice UI enhancements
+        const countDisplay = document.querySelector('.counter-display');
+
+        // Add loading state to buttons
+        document.addEventListener('rx:before', (e) => {
+            if (e.target.tagName === 'BUTTON') {
+                e.target.classList.add('loading');
+            }
+        });
+
+        document.addEventListener('rx:after', (e) => {
+            if (e.target.tagName === 'BUTTON') {
+                e.target.classList.remove('loading');
+            }
+        });
+
+        // Add bump animation when count changes
+        document.addEventListener('rx:swapped', (e) => {
+            if (e.target.id === 'count') {
+                countDisplay.classList.add('bump');
+                setTimeout(() => {
+                    countDisplay.classList.remove('bump');
+                }, 100);
+            }
+        });
+    </script>
+</body>
+</html>

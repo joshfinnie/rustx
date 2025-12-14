@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>RustX Debug Test</title>
+    <style>
+        body { font-family: monospace; padding: 20px; }
+        .log { background: #f0f0f0; padding: 10px; margin: 10px 0; }
+        button { padding: 10px; margin: 5px; }
+        #count { font-size: 24px; font-weight: bold; padding: 10px; }
+    </style>
+</head>
+<body>
+    <h1>RustX Debug Test</h1>
+
+    <div id="log"></div>
+
+    <hr>
+
+    <h2>Counter Test</h2>
+    <button
+        id="dec-btn"
+        rx-action="/decrement"
+        rx-method="POST"
+        rx-target="#count"
+        rx-swap="innerHTML">
+        -
+    </button>
+    <span id="count">0</span>
+    <button
+        id="inc-btn"
+        rx-action="/increment"
+        rx-method="POST"
+        rx-target="#count"
+        rx-swap="innerHTML">
+        +
+    </button>
+
+    <!-- Load RustX -->
+    <script src="../../dist-cdn/rustx.js"></script>
+
+    <script>
+        const log = document.getElementById('log');
+
+        function addLog(msg, color = 'black') {
+            const div = document.createElement('div');
+            div.className = 'log';
+            div.style.color = color;
+            div.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+            log.appendChild(div);
+            console.log(msg);
+        }
+
+        // Wait for RustX to be ready
+        window.addEventListener('rustx:ready', () => {
+            addLog('✅ RustX loaded successfully!', 'green');
+        });
+
+        addLog('Starting RustX load...');
+
+        // Log all rustx events
+        const events = ['rx:init', 'rx:inited', 'rx:config', 'rx:before', 'rx:after', 'rx:swapped', 'rx:finally'];
+        events.forEach(evt => {
+            document.addEventListener(evt, (e) => {
+                addLog(`Event: ${evt} on ${e.target.tagName}#${e.target.id || 'unknown'}`, 'blue');
+            });
+        });
+
+        // Check if buttons are initialized
+        setTimeout(() => {
+            const incBtn = document.getElementById('inc-btn');
+            const decBtn = document.getElementById('dec-btn');
+            addLog(`Inc button has __rustx: ${incBtn.__rustx !== undefined}`);
+            addLog(`Dec button has __rustx: ${decBtn.__rustx !== undefined}`);
+        }, 1000);
+    </script>
+</body>
+</html>

@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RustX WASM - Basic Example</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        h1 {
+            color: #333;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #555;
+            margin-top: 30px;
+        }
+        .example {
+            background: #f5f5f5;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        button, input[type="submit"] {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        button:hover, input[type="submit"]:hover {
+            background: #0056b3;
+        }
+        input[type="text"], input[type="email"] {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 200px;
+            margin-right: 10px;
+        }
+        .result {
+            margin-top: 15px;
+            padding: 10px;
+            background: white;
+            border-left: 3px solid #28a745;
+            min-height: 20px;
+        }
+        code {
+            background: #e9ecef;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 0.9em;
+        }
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>RustX WASM - Basic Examples</h1>
+    <p>This page demonstrates the reactive features of rustx-wasm using declarative HTML attributes.</p>
+
+    <!-- Example 1: Simple Button Click -->
+    <div class="example">
+        <h2>1. Simple Button Click</h2>
+        <p>Click the button to fetch content from the server.</p>
+        <button
+            rx-action="/api/hello"
+            rx-target="#result1"
+            rx-swap="innerHTML">
+            Click Me
+        </button>
+        <div id="result1" class="result">
+            Result will appear here...
+        </div>
+        <details>
+            <summary>View HTML</summary>
+            <pre><code>&lt;button
+    rx-action="/api/hello"
+    rx-target="#result1"
+    rx-swap="innerHTML"&gt;
+    Click Me
+&lt;/button&gt;</code></pre>
+        </details>
+    </div>
+
+    <!-- Example 2: Form Submission -->
+    <div class="example">
+        <h2>2. Form Submission</h2>
+        <p>Submit the form to send data to the server.</p>
+        <form rx-action="/api/submit" rx-target="#result2">
+            <input type="text" name="username" placeholder="Your name" required>
+            <input type="email" name="email" placeholder="Your email" required>
+            <input type="submit" value="Submit">
+        </form>
+        <div id="result2" class="result">
+            Form result will appear here...
+        </div>
+        <details>
+            <summary>View HTML</summary>
+            <pre><code>&lt;form rx-action="/api/submit" rx-target="#result2"&gt;
+    &lt;input type="text" name="username" required&gt;
+    &lt;input type="email" name="email" required&gt;
+    &lt;input type="submit" value="Submit"&gt;
+&lt;/form&gt;</code></pre>
+        </details>
+    </div>
+
+    <!-- Example 3: Different Swap Modes -->
+    <div class="example">
+        <h2>3. Different Swap Modes</h2>
+        <p>Try different ways to insert content.</p>
+        <button
+            rx-action="/api/item"
+            rx-target="#list"
+            rx-swap="beforeend">
+            Append Item
+        </button>
+        <button
+            rx-action="/api/item"
+            rx-target="#list"
+            rx-swap="afterbegin">
+            Prepend Item
+        </button>
+        <button
+            rx-action="/api/clear"
+            rx-target="#list"
+            rx-swap="innerHTML">
+            Clear List
+        </button>
+        <div id="list" class="result">
+            <div>Initial Item</div>
+        </div>
+        <details>
+            <summary>View HTML</summary>
+            <pre><code>&lt;button rx-action="/api/item" rx-target="#list" rx-swap="beforeend"&gt;
+    Append Item
+&lt;/button&gt;
+&lt;button rx-action="/api/item" rx-target="#list" rx-swap="afterbegin"&gt;
+    Prepend Item
+&lt;/button&gt;</code></pre>
+        </details>
+    </div>
+
+    <!-- Example 4: Custom Trigger -->
+    <div class="example">
+        <h2>4. Custom Trigger (Change Event)</h2>
+        <p>The request is triggered on input change instead of click.</p>
+        <select
+            rx-action="/api/select"
+            rx-trigger="change"
+            rx-target="#result4"
+            rx-swap="innerHTML">
+            <option value="">Choose an option...</option>
+            <option value="option1">Option 1</option>
+            <option value="option2">Option 2</option>
+            <option value="option3">Option 3</option>
+        </select>
+        <div id="result4" class="result">
+            Select an option to see the result...
+        </div>
+        <details>
+            <summary>View HTML</summary>
+            <pre><code>&lt;select
+    rx-action="/api/select"
+    rx-trigger="change"
+    rx-target="#result4"&gt;
+    &lt;option value="option1"&gt;Option 1&lt;/option&gt;
+&lt;/select&gt;</code></pre>
+        </details>
+    </div>
+
+    <!-- Example 5: POST Method -->
+    <div class="example">
+        <h2>5. POST Method</h2>
+        <p>Send data using POST method.</p>
+        <button
+            rx-action="/api/create"
+            rx-method="POST"
+            name="action"
+            value="create"
+            rx-target="#result5"
+            rx-swap="innerHTML">
+            Create Item
+        </button>
+        <div id="result5" class="result">
+            Click the button to create an item...
+        </div>
+        <details>
+            <summary>View HTML</summary>
+            <pre><code>&lt;button
+    rx-action="/api/create"
+    rx-method="POST"
+    name="action"
+    value="create"
+    rx-target="#result5"&gt;
+    Create Item
+&lt;/button&gt;</code></pre>
+        </details>
+    </div>
+
+    <!-- Example 6: Event Listeners -->
+    <div class="example">
+        <h2>6. Custom Events</h2>
+        <p>Listen to rustx events for custom behavior.</p>
+        <button
+            id="event-demo"
+            rx-action="/api/hello"
+            rx-target="#result6"
+            rx-swap="innerHTML">
+            Click for Event Demo
+        </button>
+        <div id="result6" class="result">
+            Check the browser console for events...
+        </div>
+        <div id="event-log" style="margin-top: 10px; padding: 10px; background: #fff; border: 1px solid #ddd; border-radius: 4px; font-family: monospace; font-size: 12px;">
+            Events will be logged here...
+        </div>
+    </div>
+
+    <!-- Load RustX -->
+    <script src="../../dist-cdn/rustx.js"></script>
+
+    <script>
+        // Add loading indicator on requests
+        document.addEventListener('rx:before', (e) => {
+            e.target.classList.add('loading');
+        });
+
+        document.addEventListener('rx:after', (e) => {
+            e.target.classList.remove('loading');
+        });
+
+        // Event logging for Example 6
+        const eventLog = document.getElementById('event-log');
+        const eventDemo = document.getElementById('event-demo');
+
+        if (eventDemo) {
+            ['rx:init', 'rx:before', 'rx:after', 'rx:swapped'].forEach(eventName => {
+                eventDemo.addEventListener(eventName, (e) => {
+                    const timestamp = new Date().toLocaleTimeString();
+                    const logEntry = document.createElement('div');
+                    logEntry.textContent = `[${timestamp}] ${eventName} fired`;
+                    logEntry.style.color = eventName === 'rx:init' ? '#007bff' :
+                                           eventName === 'rx:before' ? '#ffc107' :
+                                           eventName === 'rx:after' ? '#28a745' : '#6c757d';
+                    eventLog.appendChild(logEntry);
+                });
+            });
+        }
+    </script>
+</body>
+</html>

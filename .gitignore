@@ -1,0 +1,5 @@
+/target
+/pkg
+/dist
+/dist-cdn
+examples/**/pkg

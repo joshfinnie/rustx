@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RustX Simple Counter - One Script Tag</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 60px;
+            text-align: center;
+            max-width: 500px;
+            width: 100%;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+            font-weight: 700;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 40px;
+            font-size: 1.1em;
+        }
+
+        .counter-display {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-size: 6em;
+            font-weight: 700;
+            padding: 40px;
+            border-radius: 15px;
+            margin: 30px 0;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+            transition: transform 0.1s ease;
+        }
+
+        .controls {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-bottom: 30px;
+        }
+
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 80px;
+            height: 80px;
+            font-size: 3em;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            font-weight: 300;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        button:hover {
+            background: #764ba2;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(118, 75, 162, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .code-snippet {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            text-align: left;
+        }
+
+        .code-snippet h3 {
+            margin: 0 0 15px 0;
+            color: #333;
+            font-size: 1.1em;
+        }
+
+        pre {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-size: 0.9em;
+            line-height: 1.5;
+        }
+
+        code {
+            font-family: 'Monaco', 'Courier New', monospace;
+        }
+
+        .highlight {
+            color: #66d9ef;
+        }
+
+        .string {
+            color: #a6e22e;
+        }
+
+        .footer {
+            margin-top: 30px;
+            color: #999;
+            font-size: 0.9em;
+        }
+
+        .status {
+            margin: 20px 0;
+            padding: 10px;
+            border-radius: 5px;
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status.ready {
+            background: #d4edda;
+            color: #155724;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>⚡ RustX Counter</h1>
+        <p class="subtitle">Simple. Reactive. One Script Tag.</p>
+
+        <div class="status" id="status">
+            Loading RustX...
+        </div>
+
+        <div class="counter-display">
+            <span id="count">0</span>
+        </div>
+
+        <div class="controls">
+            <button
+                rx-action="/decrement"
+                rx-method="POST"
+                rx-target="#count"
+                rx-swap="innerHTML">
+                −
+            </button>
+            <button
+                rx-action="/increment"
+                rx-method="POST"
+                rx-target="#count"
+                rx-swap="innerHTML">
+                +
+            </button>
+        </div>
+
+        <div style="background: #fff3cd; color: #856404; padding: 20px; margin: 30px 0; border-radius: 10px; text-align: left;">
+            <strong>⚠️ Demo Note:</strong> This page has JavaScript to mock a backend (so it works standalone).
+            <br><br>
+            <strong>End users DON'T need that mock code!</strong> They only need the script tag + a real backend.
+            <br><br>
+            See <code>examples/basic/minimal-counter.html</code> for the production version.
+        </div>
+
+        <div class="code-snippet">
+            <h3>📝 The HTML for this counter:</h3>
+            <pre><code><span class="highlight">&lt;button</span> <span class="string">rx-action="/increment"</span> <span class="string">rx-method="POST"</span>
+        <span class="string">rx-target="#count"</span> <span class="string">rx-swap="innerHTML"</span><span class="highlight">&gt;</span>
+    +
+<span class="highlight">&lt;/button&gt;</span>
+<span class="highlight">&lt;span</span> <span class="string">id="count"</span><span class="highlight">&gt;</span>0<span class="highlight">&lt;/span&gt;</span>
+
+<span class="highlight">&lt;script</span> <span class="string">src="https://cdn.rustx.io/rustx.js"</span><span class="highlight">&gt;&lt;/script&gt;</span></code></pre>
+        </div>
+
+        <div class="footer">
+            No build step. No npm install. Just works. 🦀
+        </div>
+    </div>
+
+    <script>
+        // Mock server API - MUST be set up BEFORE RustX loads
+        let counter = 0;
+        const originalFetch = window.fetch;
+
+        window.fetch = function(url, options) {
+            const urlString = typeof url === 'string' ? url : url.url;
+
+            console.log('Fetch intercepted:', urlString, options);
+
+            // Handle both relative and absolute URLs
+            if (urlString.endsWith('/increment') || urlString === '/increment') {
+                counter++;
+                console.log('→ Increment! Counter is now:', counter);
+                return Promise.resolve(new Response(counter.toString(), {
+                    status: 200,
+                    headers: { 'Content-Type': 'text/html' }
+                }));
+            } else if (urlString.endsWith('/decrement') || urlString === '/decrement') {
+                counter--;
+                console.log('→ Decrement! Counter is now:', counter);
+                return Promise.resolve(new Response(counter.toString(), {
+                    status: 200,
+                    headers: { 'Content-Type': 'text/html' }
+                }));
+            } else if (urlString.endsWith('/reset') || urlString === '/reset') {
+                counter = 0;
+                console.log('→ Reset! Counter is now:', counter);
+                return Promise.resolve(new Response(counter.toString(), {
+                    status: 200,
+                    headers: { 'Content-Type': 'text/html' }
+                }));
+            }
+
+            // For other URLs (like WASM), use the original fetch
+            return originalFetch.apply(this, arguments);
+        };
+    </script>
+
+    <!--
+        That's it! Just this one script tag.
+        In production, you'd use:
+        <script src="https://cdn.rustx.io/rustx.js"></script>
+
+        For this demo, we're loading from the local dist-cdn folder:
+    -->
+    <script src="../dist-cdn/rustx.js"></script>
+
+    <script>
+        // Optional: Listen for RustX ready event
+        window.addEventListener('rustx:ready', () => {
+            const status = document.getElementById('status');
+            status.textContent = '✅ RustX loaded and ready!';
+            status.classList.add('ready');
+        });
+    </script>
+</body>
+</html>

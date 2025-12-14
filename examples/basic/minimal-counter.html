@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RustX Minimal Counter - Production Example</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 60px;
+            text-align: center;
+            max-width: 500px;
+            width: 100%;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 40px;
+            font-size: 1.1em;
+        }
+
+        .counter-display {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-size: 6em;
+            font-weight: 700;
+            padding: 40px;
+            border-radius: 15px;
+            margin: 30px 0;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+        }
+
+        .controls {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+        }
+
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 80px;
+            height: 80px;
+            font-size: 3em;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        button:hover {
+            background: #764ba2;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(118, 75, 162, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .note {
+            margin-top: 30px;
+            padding: 20px;
+            background: #fff3cd;
+            border-radius: 10px;
+            color: #856404;
+            font-size: 0.9em;
+        }
+
+        .note strong {
+            display: block;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>⚡ RustX Counter</h1>
+        <p class="subtitle">Minimal Production Example</p>
+
+        <div class="counter-display">
+            <span id="count">0</span>
+        </div>
+
+        <div class="controls">
+            <button
+                rx-action="/decrement"
+                rx-method="POST"
+                rx-target="#count"
+                rx-swap="innerHTML">
+                −
+            </button>
+            <button
+                rx-action="/increment"
+                rx-method="POST"
+                rx-target="#count"
+                rx-swap="innerHTML">
+                +
+            </button>
+        </div>
+
+        <div class="note">
+            <strong>📝 This is the complete HTML!</strong>
+            No JavaScript needed besides the script tag below.
+            Just run with a real server that handles POST requests.
+            <br><br>
+            <code>python3 server.py</code> then open this page.
+        </div>
+    </div>
+
+    <!--
+        ═══════════════════════════════════════════════════════════
+        THIS IS ALL YOUR END USERS NEED:
+        ═══════════════════════════════════════════════════════════
+    -->
+    <script src="../../dist-cdn/rustx.js"></script>
+    <!--
+        ═══════════════════════════════════════════════════════════
+        That's it! No other JavaScript. No initialization.
+        Just make sure your backend handles the POST requests.
+        ═══════════════════════════════════════════════════════════
+    -->
+</body>
+</html>
