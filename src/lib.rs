@@ -8,6 +8,8 @@ use web_sys::{
 
 const RUSTX_MARKER: &str = "__rustx";
 const RUSTX_MO_MARKER: &str = "__rustx_mo";
+const RUSTX_HISTORY_CACHE_KEY: &str = "__rustx_history_cache";
+const RUSTX_HISTORY_ENABLED: &str = "__rustx_history_enabled";
 
 #[wasm_bindgen(start)]
 pub fn start() {
@@ -23,7 +25,7 @@ pub fn start() {
     init_rustx(&window, &document);
 }
 
-fn init_rustx(_window: &Window, document: &Document) {
+fn init_rustx(window: &Window, document: &Document) {
     let doc_clone = document.clone();
 
     let callback = Closure::wrap(Box::new(move |records: js_sys::Array| {
@@ -56,6 +58,7 @@ fn init_rustx(_window: &Window, document: &Document) {
     callback.forget();
 
     let doc_clone = document.clone();
+    let window_clone = window.clone();
     let obs_clone = observer.clone();
     let dom_ready = Closure::wrap(Box::new(move || {
         let init = MutationObserverInit::new();
@@ -68,6 +71,11 @@ fn init_rustx(_window: &Window, document: &Document) {
 
         if let Some(body) = doc_clone.body() {
             process_element(&doc_clone, &body);
+        }
+
+        // Create initial page snapshot for history
+        if let Some(snapshot) = create_snapshot(&window_clone, &doc_clone) {
+            save_snapshot_to_history(&window_clone, &snapshot);
         }
     }) as Box<dyn FnMut()>);
 
@@ -106,6 +114,27 @@ fn init_rustx(_window: &Window, document: &Document) {
         .ok();
 
     process_listener.forget();
+
+    // Register popstate handler for browser back/forward navigation
+    let window_clone = window.clone();
+    let doc_clone = document.clone();
+    let popstate_handler = Closure::wrap(Box::new(move |evt: Event| {
+        handle_popstate(&window_clone, &doc_clone, &evt);
+    }) as Box<dyn FnMut(Event)>);
+
+    window
+        .add_event_listener_with_callback("popstate", popstate_handler.as_ref().unchecked_ref())
+        .ok();
+
+    popstate_handler.forget();
+
+    // Mark that history is enabled
+    js_sys::Reflect::set(
+        window.as_ref(),
+        &JsValue::from_str(RUSTX_HISTORY_ENABLED),
+        &JsValue::TRUE,
+    )
+    .ok();
 }
 
 fn process_element(document: &Document, element: &Element) {
@@ -126,6 +155,195 @@ fn process_element(document: &Document, element: &Element) {
             }
         }
     }
+}
+
+fn create_snapshot(window: &Window, document: &Document) -> Option<JsValue> {
+    let body = document.body()?;
+    let html = body.inner_html();
+
+    let scroll_x = window.scroll_x().unwrap_or(0.0);
+    let scroll_y = window.scroll_y().unwrap_or(0.0);
+
+    let location = window.location();
+    let url = location.href().unwrap_or_default();
+    let title = document.title();
+
+    let timestamp = js_sys::Date::now();
+
+    // Create snapshot object using js_sys::Object
+    let snapshot = js_sys::Object::new();
+    js_sys::Reflect::set(&snapshot, &JsValue::from_str("html"), &JsValue::from_str(&html)).ok()?;
+    js_sys::Reflect::set(&snapshot, &JsValue::from_str("scrollX"), &JsValue::from_f64(scroll_x)).ok()?;
+    js_sys::Reflect::set(&snapshot, &JsValue::from_str("scrollY"), &JsValue::from_f64(scroll_y)).ok()?;
+    js_sys::Reflect::set(&snapshot, &JsValue::from_str("url"), &JsValue::from_str(&url)).ok()?;
+    js_sys::Reflect::set(&snapshot, &JsValue::from_str("title"), &JsValue::from_str(&title)).ok()?;
+    js_sys::Reflect::set(&snapshot, &JsValue::from_str("timestamp"), &JsValue::from_f64(timestamp)).ok()?;
+
+    Some(snapshot.into())
+}
+
+fn save_snapshot_to_history(window: &Window, snapshot: &JsValue) {
+    if let Ok(history) = window.history() {
+        // Use replaceState to update current history entry with snapshot
+        history.replace_state_with_url(snapshot, "", None).ok();
+    }
+}
+
+fn restore_snapshot(window: &Window, document: &Document, snapshot: &JsValue) {
+    // Extract snapshot data
+    let html = js_sys::Reflect::get(snapshot, &JsValue::from_str("html"))
+        .ok()
+        .and_then(|v| v.as_string())
+        .unwrap_or_default();
+
+    let scroll_x = js_sys::Reflect::get(snapshot, &JsValue::from_str("scrollX"))
+        .ok()
+        .and_then(|v| v.as_f64())
+        .unwrap_or(0.0);
+
+    let scroll_y = js_sys::Reflect::get(snapshot, &JsValue::from_str("scrollY"))
+        .ok()
+        .and_then(|v| v.as_f64())
+        .unwrap_or(0.0);
+
+    let title = js_sys::Reflect::get(snapshot, &JsValue::from_str("title"))
+        .ok()
+        .and_then(|v| v.as_string())
+        .unwrap_or_default();
+
+    // Restore body HTML
+    if let Some(body) = document.body() {
+        body.set_inner_html(&html);
+    }
+
+    // Restore document title
+    if !title.is_empty() {
+        document.set_title(&title);
+    }
+
+    // Restore scroll position
+    window.scroll_to_with_x_and_y(scroll_x, scroll_y);
+
+    // Re-process RustX elements
+    if let Some(body) = document.body() {
+        if let Ok(element) = body.dyn_into::<Element>() {
+            process_element(document, &element);
+        }
+    }
+
+    // Fire rx:restored event
+    let options = CustomEventInit::new();
+    options.set_bubbles(true);
+    options.set_cancelable(false);
+    options.set_composed(true);
+
+    if let Ok(event) = CustomEvent::new_with_event_init_dict("rx:restored", &options) {
+        document.dispatch_event(&event).ok();
+    }
+}
+
+fn handle_popstate(window: &Window, document: &Document, evt: &Event) {
+    // Try to get state from the popstate event
+    if let Some(popstate_evt) = evt.dyn_ref::<web_sys::PopStateEvent>() {
+        let state = popstate_evt.state();
+
+        // Check if state is not null and has snapshot data
+        if !state.is_null() && !state.is_undefined() {
+            // Check if it has the html property (indicating it's a snapshot)
+            if let Ok(has_html) = js_sys::Reflect::has(&state, &JsValue::from_str("html")) {
+                if has_html {
+                    restore_snapshot(window, document, &state);
+                    return;
+                }
+            }
+        }
+    }
+
+    // If no snapshot found, we could make a server request
+    // For now, just log that no snapshot was found
+    web_sys::console::log_1(&JsValue::from_str("RustX: No snapshot found in history state"));
+}
+
+struct TriggerSpec {
+    event_name: String,
+    filter: Option<String>,
+    has_once: bool,
+    has_changed: bool,
+    delay_ms: Option<u32>,
+}
+
+fn parse_trigger(trigger_str: &str) -> TriggerSpec {
+    let mut working_str = trigger_str.to_string();
+    let mut filter = None;
+    let mut has_once = false;
+    let mut has_changed = false;
+    let mut delay_ms = None;
+
+    // Extract filter in square brackets
+    if let Some(bracket_start) = working_str.find('[') {
+        if let Some(bracket_end) = working_str.find(']') {
+            filter = Some(working_str[bracket_start + 1..bracket_end].to_string());
+            working_str = working_str[..bracket_start].trim().to_string();
+        }
+    }
+
+    // Parse modifiers (space-separated after event name)
+    let parts: Vec<&str> = working_str.split_whitespace().collect();
+    let event_name = if !parts.is_empty() {
+        let name = parts[0].to_string();
+
+        for modifier in &parts[1..] {
+            if *modifier == "once" {
+                has_once = true;
+            } else if *modifier == "changed" {
+                has_changed = true;
+            } else if modifier.starts_with("delay:") {
+                if let Some(delay_str) = modifier.strip_prefix("delay:") {
+                    // Parse delay like "1s", "500ms"
+                    if let Some(ms_str) = delay_str.strip_suffix("ms") {
+                        delay_ms = ms_str.parse().ok();
+                    } else if let Some(s_str) = delay_str.strip_suffix("s") {
+                        delay_ms = s_str.parse::<u32>().ok().map(|s| s * 1000);
+                    }
+                }
+            }
+        }
+
+        name
+    } else {
+        working_str
+    };
+
+    TriggerSpec {
+        event_name,
+        filter,
+        has_once,
+        has_changed,
+        delay_ms,
+    }
+}
+
+fn evaluate_trigger_filter(event: &Event, element: &Element, filter_expr: &str) -> bool {
+    // Create a JavaScript function to evaluate the filter
+    // The filter expression can access event properties and 'this' (the element)
+    let js_code = format!(
+        "(function(event) {{ with(event) {{ with(this) {{ return ({}); }} }} }}).call(arguments[0], arguments[1])",
+        filter_expr
+    );
+
+    let func = js_sys::Function::new_no_args(&js_code);
+    let this = JsValue::from(element);
+    let args = js_sys::Array::new();
+    args.push(&this);
+    args.push(&JsValue::from(event));
+
+    if let Ok(result) = func.apply(&this, &args) {
+        // Convert result to boolean
+        return result.is_truthy();
+    }
+
+    // If evaluation fails, don't trigger
+    false
 }
 
 fn init_element(document: &Document, element: &Element) {
@@ -149,7 +367,7 @@ fn init_element(document: &Document, element: &Element) {
         return;
     }
 
-    let trigger_event = if let Some(attr) = element.get_attribute("rx-trigger") {
+    let trigger_str = if let Some(attr) = element.get_attribute("rx-trigger") {
         attr
     } else if element.matches("form").unwrap_or(false) {
         "submit".to_string()
@@ -162,15 +380,107 @@ fn init_element(document: &Document, element: &Element) {
         "click".to_string()
     };
 
+    let trigger_spec = parse_trigger(&trigger_str);
+
+    // Store previous value for 'changed' modifier
+    if trigger_spec.has_changed {
+        if let Some(html_el) = element.dyn_ref::<HtmlElement>() {
+            if let Ok(value) = js_sys::Reflect::get(html_el, &JsValue::from_str("value")) {
+                js_sys::Reflect::set(
+                    element,
+                    &JsValue::from_str("__rustx_last_value"),
+                    &value,
+                )
+                .ok();
+            }
+        }
+    }
+
     let doc_clone = document.clone();
     let el_clone = element.clone();
+    let filter_expr = trigger_spec.filter.clone();
+    let has_changed = trigger_spec.has_changed;
+    let delay_ms = trigger_spec.delay_ms;
+
     let handler = Closure::wrap(Box::new(move |evt: Event| {
-        handle_rustx_event(&doc_clone, &el_clone, &evt);
+        // Check filter first
+        if let Some(ref filter) = filter_expr {
+            if !evaluate_trigger_filter(&evt, &el_clone, filter) {
+                return;
+            }
+        }
+
+        // Check 'changed' modifier
+        if has_changed {
+            if let Some(html_el) = el_clone.dyn_ref::<HtmlElement>() {
+                if let Ok(current_value) = js_sys::Reflect::get(html_el, &JsValue::from_str("value"))
+                {
+                    if let Ok(last_value) =
+                        js_sys::Reflect::get(&el_clone, &JsValue::from_str("__rustx_last_value"))
+                    {
+                        // Compare values
+                        if js_sys::JSON::stringify(&current_value).ok()
+                            == js_sys::JSON::stringify(&last_value).ok()
+                        {
+                            return; // Value hasn't changed, don't trigger
+                        }
+                    }
+                    // Update last value
+                    js_sys::Reflect::set(
+                        &el_clone,
+                        &JsValue::from_str("__rustx_last_value"),
+                        &current_value,
+                    )
+                    .ok();
+                }
+            }
+        }
+
+        let doc = doc_clone.clone();
+        let el = el_clone.clone();
+        let event = evt.clone();
+
+        // Apply delay if specified
+        if let Some(delay) = delay_ms {
+            let callback = Closure::once(Box::new(move || {
+                handle_rustx_event(&doc, &el, &event);
+            }) as Box<dyn FnOnce()>);
+
+            web_sys::window()
+                .unwrap()
+                .set_timeout_with_callback_and_timeout_and_arguments_0(
+                    callback.as_ref().unchecked_ref(),
+                    delay as i32,
+                )
+                .ok();
+
+            callback.forget();
+        } else {
+            handle_rustx_event(&doc_clone, &el_clone, &evt);
+        }
     }) as Box<dyn FnMut(Event)>);
 
-    element
-        .add_event_listener_with_callback(&trigger_event, handler.as_ref().unchecked_ref())
-        .ok();
+    // Add event listener with 'once' option if specified
+    if trigger_spec.has_once {
+        // Use AddEventListenerOptions with once: true
+        let mut options = web_sys::AddEventListenerOptions::new();
+        options.set_once(true);
+
+        element
+            .add_event_listener_with_callback_and_add_event_listener_options(
+                &trigger_spec.event_name,
+                handler.as_ref().unchecked_ref(),
+                &options,
+            )
+            .ok();
+    } else {
+        element
+            .add_event_listener_with_callback(
+                &trigger_spec.event_name,
+                handler.as_ref().unchecked_ref(),
+            )
+            .ok();
+    }
 
     js_sys::Reflect::set(element, &JsValue::from_str(RUSTX_MARKER), handler.as_ref()).unwrap();
 
@@ -245,6 +555,25 @@ fn handle_rustx_event(document: &Document, element: &Element, evt: &Event) {
             .get_attribute("rx-swap")
             .unwrap_or_else(|| "outerHTML".to_string());
 
+        // Parse history attributes
+        let push_url = element.get_attribute("rx-push-url");
+        let replace_url = element.get_attribute("rx-replace-url");
+        let push_title = element.get_attribute("rx-push-title");
+
+        // Determine history mode: prefer push_url, warn if both are set
+        let history_mode: Option<(&str, String)> = if push_url.is_some() && replace_url.is_some() {
+            web_sys::console::warn_1(&JsValue::from_str(
+                "RustX Warning: Both rx-push-url and rx-replace-url are set. Using rx-push-url.",
+            ));
+            push_url.map(|url| ("push", url))
+        } else if let Some(url) = push_url {
+            Some(("push", url))
+        } else if let Some(url) = replace_url {
+            Some(("replace", url))
+        } else {
+            None
+        };
+
         let config_options = CustomEventInit::new();
         config_options.set_bubbles(true);
         config_options.set_cancelable(true);
@@ -293,6 +622,13 @@ fn handle_rustx_event(document: &Document, element: &Element, evt: &Event) {
         if !element.dispatch_event(&before_event).unwrap_or(false) {
             return;
         }
+
+        // Create snapshot if history mode is enabled
+        let snapshot = if history_mode.is_some() {
+            create_snapshot(&window, &document)
+        } else {
+            None
+        };
 
         let request = Request::new_with_str_and_init(&final_action, &request_init)
             .expect("Failed to create request");
@@ -344,6 +680,65 @@ fn handle_rustx_event(document: &Document, element: &Element, evt: &Event) {
                 }
                 "none" => {}
                 _ => {}
+            }
+
+            // Handle history push/replace after successful swap
+            if let Some((mode, url_value)) = history_mode {
+                if let Some(ref snapshot_data) = snapshot {
+                    // Save current snapshot to history before pushing/replacing
+                    save_snapshot_to_history(&window, snapshot_data);
+
+                    // Determine the URL to push
+                    let target_url = if url_value == "true" {
+                        // Use the response URL or the request URL
+                        response
+                            .as_ref()
+                            .and_then(|r| Some(r.url()))
+                            .unwrap_or_else(|| final_action.clone())
+                    } else {
+                        // Use custom URL from attribute
+                        url_value.clone()
+                    };
+
+                    // Get history object and push/replace state
+                    if let Ok(history) = window.history() {
+                        let state = JsValue::NULL;
+                        let title = push_title.as_deref().unwrap_or("");
+
+                        if mode == "push" {
+                            history.push_state_with_url(&state, title, Some(&target_url)).ok();
+
+                            // Fire rx:history-pushed event
+                            let hist_options = CustomEventInit::new();
+                            hist_options.set_bubbles(true);
+                            hist_options.set_cancelable(false);
+                            if let Ok(hist_event) =
+                                CustomEvent::new_with_event_init_dict("rx:history-pushed", &hist_options)
+                            {
+                                element.dispatch_event(&hist_event).ok();
+                            }
+                        } else {
+                            history.replace_state_with_url(&state, title, Some(&target_url)).ok();
+
+                            // Fire rx:history-replaced event
+                            let hist_options = CustomEventInit::new();
+                            hist_options.set_bubbles(true);
+                            hist_options.set_cancelable(false);
+                            if let Ok(hist_event) =
+                                CustomEvent::new_with_event_init_dict("rx:history-replaced", &hist_options)
+                            {
+                                element.dispatch_event(&hist_event).ok();
+                            }
+                        }
+
+                        // Update document title if specified
+                        if let Some(title_str) = push_title {
+                            if !title_str.is_empty() {
+                                document.set_title(&title_str);
+                            }
+                        }
+                    }
+                }
             }
         }
 

@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RustX Trigger Modifiers & Filters Demo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 900px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        h1 {
+            color: #333;
+        }
+        .demo-section {
+            background: white;
+            padding: 25px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .demo-section h3 {
+            margin-top: 0;
+            color: #007bff;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+        }
+        button, input {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        input {
+            background: white;
+            color: #333;
+            border: 1px solid #ced4da;
+        }
+        .result {
+            background: #f8f9fa;
+            padding: 15px;
+            margin-top: 15px;
+            border-radius: 4px;
+            border-left: 4px solid #28a745;
+            min-height: 30px;
+        }
+        .code {
+            background: #282c34;
+            color: #abb2bf;
+            padding: 15px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            margin: 10px 0;
+            overflow-x: auto;
+        }
+        .info {
+            background: #e7f3ff;
+            border-left: 4px solid #007bff;
+            padding: 12px;
+            margin-top: 10px;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .event-log {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 15px;
+            border-radius: 4px;
+            max-height: 150px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+            margin-top: 10px;
+        }
+        .event-log div {
+            padding: 3px 0;
+        }
+        .special-btn {
+            background: #6c757d;
+        }
+        .special-btn:hover {
+            background: #545b62;
+        }
+    </style>
+</head>
+<body>
+    <h1>RustX Trigger Modifiers & Filters</h1>
+
+    <!-- ONCE MODIFIER -->
+    <div class="demo-section">
+        <h3>1. The "once" Modifier</h3>
+        <p>Click this button multiple times - it will only work once!</p>
+
+        <div class="code">rx-trigger="click once"</div>
+
+        <button
+            rx-action="/trigger/once"
+            rx-method="POST"
+            rx-trigger="click once"
+            rx-target="#once-result"
+            rx-swap="innerHTML">
+            Click Me (Works Only Once)
+        </button>
+
+        <div id="once-result" class="result">Waiting for first click...</div>
+
+        <div class="info">
+            <strong>Use case:</strong> One-time actions like accepting terms, dismissing notifications, or tutorial steps.
+        </div>
+    </div>
+
+    <!-- CHANGED MODIFIER -->
+    <div class="demo-section">
+        <h3>2. The "changed" Modifier</h3>
+        <p>Type in the input and blur - request only fires if the value actually changed!</p>
+
+        <div class="code">rx-trigger="blur changed"</div>
+
+        <input
+            type="text"
+            placeholder="Type and blur..."
+            rx-action="/trigger/changed"
+            rx-method="POST"
+            rx-trigger="blur changed"
+            rx-target="#changed-result"
+            rx-swap="innerHTML"
+            name="text"
+            style="width: 300px">
+
+        <div id="changed-result" class="result">Blur the input after changing the text...</div>
+
+        <div class="info">
+            <strong>Use case:</strong> Auto-save forms only when values actually change, preventing unnecessary server requests.
+        </div>
+    </div>
+
+    <!-- DELAY MODIFIER -->
+    <div class="demo-section">
+        <h3>3. The "delay" Modifier</h3>
+        <p>Hover over the button - request fires 1 second after mouseenter!</p>
+
+        <div class="code">rx-trigger="mouseenter delay:1s"</div>
+
+        <button
+            rx-action="/trigger/delayed"
+            rx-method="POST"
+            rx-trigger="mouseenter delay:1s"
+            rx-target="#delay-result"
+            rx-swap="innerHTML">
+            Hover Me (1 second delay)
+        </button>
+
+        <div id="delay-result" class="result">Hover over the button...</div>
+
+        <div class="info">
+            <strong>Use case:</strong> Debouncing user input, showing previews on hover, delayed tooltips.
+        </div>
+    </div>
+
+    <!-- TRIGGER FILTERS -->
+    <div class="demo-section">
+        <h3>4. Trigger Filters - Control Key</h3>
+        <p>This button only works when you Ctrl+Click (or Cmd+Click on Mac)!</p>
+
+        <div class="code">rx-trigger="click[ctrlKey]"</div>
+
+        <button
+            rx-action="/trigger/ctrl-click"
+            rx-method="POST"
+            rx-trigger="click[ctrlKey]"
+            rx-target="#ctrl-result"
+            rx-swap="innerHTML">
+            Ctrl+Click Me
+        </button>
+
+        <div id="ctrl-result" class="result">Try Ctrl+Click or regular click...</div>
+
+        <div class="info">
+            <strong>Use case:</strong> Power user shortcuts, special actions with modifier keys.
+        </div>
+    </div>
+
+    <!-- TRIGGER FILTERS - SHIFT KEY -->
+    <div class="demo-section">
+        <h3>5. Trigger Filters - Shift Key</h3>
+        <p>This button only works when you Shift+Click!</p>
+
+        <div class="code">rx-trigger="click[shiftKey]"</div>
+
+        <button
+            rx-action="/trigger/shift-click"
+            rx-method="POST"
+            rx-trigger="click[shiftKey]"
+            rx-target="#shift-result"
+            rx-swap="innerHTML"
+            class="special-btn">
+            Shift+Click Me
+        </button>
+
+        <div id="shift-result" class="result">Try Shift+Click or regular click...</div>
+
+        <div class="info">
+            <strong>Use case:</strong> Multi-select operations, alternative actions.
+        </div>
+    </div>
+
+    <!-- COMBINED MODIFIERS -->
+    <div class="demo-section">
+        <h3>6. Combined: delay + filter</h3>
+        <p>Ctrl+Click this button - it will delay for 500ms before triggering!</p>
+
+        <div class="code">rx-trigger="click[ctrlKey] delay:500ms"</div>
+
+        <button
+            rx-action="/trigger/combo"
+            rx-method="POST"
+            rx-trigger="click[ctrlKey] delay:500ms"
+            rx-target="#combo-result"
+            rx-swap="innerHTML"
+            class="special-btn">
+            Ctrl+Click Me (500ms delay)
+        </button>
+
+        <div id="combo-result" class="result">Ctrl+Click and wait...</div>
+
+        <div class="info">
+            <strong>Use case:</strong> Complex interactions combining multiple conditions.
+        </div>
+    </div>
+
+    <!-- MOUSEENTER ONCE -->
+    <div class="demo-section">
+        <h3>7. Mouse Enter + Once</h3>
+        <p>Hover over this div - it loads content only on first hover!</p>
+
+        <div class="code">rx-trigger="mouseenter once"</div>
+
+        <div
+            rx-action="/trigger/hover-once"
+            rx-method="POST"
+            rx-trigger="mouseenter once"
+            rx-target="#hover-result"
+            rx-swap="innerHTML"
+            style="background: #ffc107; padding: 30px; text-align: center; border-radius: 8px; cursor: pointer;">
+            <strong>Hover Over Me!</strong>
+        </div>
+
+        <div id="hover-result" class="result">Not hovered yet...</div>
+
+        <div class="info">
+            <strong>Use case:</strong> Lazy-loading content on first interaction, one-time tooltips.
+        </div>
+    </div>
+
+    <!-- EVENT LOG -->
+    <div class="demo-section">
+        <h3>Event Log</h3>
+        <div class="event-log" id="event-log">
+            <div><strong>Events will appear here...</strong></div>
+        </div>
+    </div>
+
+    <script src="../../dist-cdn/rustx.js"></script>
+
+    <script>
+        const log = document.getElementById('event-log');
+
+        function logEvent(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            const div = document.createElement('div');
+            div.textContent = `[${timestamp}] ${message}`;
+            log.appendChild(div);
+            log.scrollTop = log.scrollHeight;
+        }
+
+        // Listen for RustX events
+        document.addEventListener('rx:before', (e) => {
+            const action = e.target.getAttribute('rx-action');
+            const trigger = e.target.getAttribute('rx-trigger') || 'default';
+            logEvent(`⚡ Triggered: ${action} (${trigger})`);
+        });
+
+        document.addEventListener('rx:after', (e) => {
+            logEvent(`✓ Request completed`);
+        });
+
+        logEvent('Page loaded - Try the demos above!');
+    </script>
+</body>
+</html>

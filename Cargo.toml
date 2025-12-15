@@ -35,6 +35,11 @@ web-sys = { version = "0.3", features = [
   "AbortSignal",
   "UrlSearchParams",
   "ViewTransition",
+  "History",
+  "Location",
+  "PopStateEvent",
+  "Storage",
+  "AddEventListenerOptions",
 ] }
 js-sys = "0.3"
 wasm-bindgen-futures = "0.4"

@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RustX History Demo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        h1 {
+            color: #333;
+        }
+        nav {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        nav button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        nav button:hover {
+            background: #0056b3;
+        }
+        #content {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            min-height: 200px;
+        }
+        .event-log {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 20px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .event-log div {
+            padding: 5px 0;
+            border-bottom: 1px solid #dee2e6;
+        }
+        .event-log div:last-child {
+            border-bottom: none;
+        }
+        .info-box {
+            background: #e7f3ff;
+            border-left: 4px solid #007bff;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 4px;
+        }
+        .replace-btn {
+            background: #6c757d !important;
+        }
+        .replace-btn:hover {
+            background: #545b62 !important;
+        }
+    </style>
+</head>
+<body>
+    <h1>RustX History Support Demo</h1>
+
+    <div class="info-box">
+        <strong>Try it:</strong> Click the buttons below to navigate between pages.
+        Use your browser's back/forward buttons to see the history support in action!
+    </div>
+
+    <nav>
+        <h3>Navigation</h3>
+        <button
+            rx-action="/page1"
+            rx-method="POST"
+            rx-push-url="true"
+            rx-target="#content"
+            rx-swap="innerHTML"
+            rx-push-title="Page 1 - RustX History Demo">
+            Page 1 (Push)
+        </button>
+
+        <button
+            rx-action="/page2"
+            rx-method="POST"
+            rx-push-url="/custom-page-2-url"
+            rx-target="#content"
+            rx-swap="innerHTML"
+            rx-push-title="Page 2 - RustX History Demo">
+            Page 2 (Custom URL)
+        </button>
+
+        <button
+            rx-action="/page3"
+            rx-method="POST"
+            rx-replace-url="true"
+            rx-target="#content"
+            rx-swap="innerHTML"
+            rx-push-title="Page 3 - RustX History Demo"
+            class="replace-btn">
+            Page 3 (Replace)
+        </button>
+
+        <button
+            rx-action="/page4"
+            rx-method="POST"
+            rx-push-url="true"
+            rx-target="#content"
+            rx-swap="innerHTML">
+            Page 4 (No Custom Title)
+        </button>
+    </nav>
+
+    <div id="content">
+        <h2>Home Page</h2>
+        <p>Welcome to the RustX History Support Demo!</p>
+        <p>This page demonstrates the new history features:</p>
+        <ul>
+            <li><code>rx-push-url</code> - Push new URL to history (creates back button entry)</li>
+            <li><code>rx-replace-url</code> - Replace current URL (no back button entry)</li>
+            <li><code>rx-push-title</code> - Set custom page title in browser history</li>
+        </ul>
+        <p><strong>Current scroll position will be preserved when you navigate back!</strong></p>
+        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
+        <p>Scroll down and click a navigation button to see the scroll restoration in action.</p>
+        <br><br><br><br><br><br><br><br>
+        <p style="background: #ffffcc; padding: 10px;">Did you scroll? Click a button above, then use the back button!</p>
+    </div>
+
+    <div class="event-log" id="event-log">
+        <strong>Event Log:</strong><br>
+    </div>
+
+    <script src="../../dist-cdn/rustx.js"></script>
+
+    <script>
+        const log = document.getElementById('event-log');
+
+        function logEvent(eventName, detail = '') {
+            const timestamp = new Date().toLocaleTimeString();
+            const div = document.createElement('div');
+            div.textContent = `[${timestamp}] ${eventName}${detail ? ': ' + detail : ''}`;
+            log.appendChild(div);
+            log.scrollTop = log.scrollHeight;
+        }
+
+        // Listen for all history events
+        document.addEventListener('rx:history-pushed', (e) => {
+            logEvent('rx:history-pushed', window.location.href);
+        });
+
+        document.addEventListener('rx:history-replaced', (e) => {
+            logEvent('rx:history-replaced', window.location.href);
+        });
+
+        document.addEventListener('rx:restored', (e) => {
+            logEvent('rx:restored', 'Page restored from history snapshot');
+        });
+
+        // Listen for other RustX events
+        document.addEventListener('rx:before', (e) => {
+            logEvent('rx:before', 'Making request...');
+        });
+
+        document.addEventListener('rx:after', (e) => {
+            logEvent('rx:after', 'Response received');
+        });
+
+        document.addEventListener('rx:swapped', (e) => {
+            logEvent('rx:swapped', 'Content swapped');
+        });
+
+        // Log initial page load
+        logEvent('Page Loaded', window.location.href);
+    </script>
+</body>
+</html>

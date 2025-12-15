@@ -100,6 +100,106 @@ class RustXHandler(SimpleHTTPRequestHandler):
             RustXHandler.counter = 0
             self.send_html_response(str(RustXHandler.counter))
 
+        # History demo endpoints
+        elif path == '/page1':
+            response_html = '''
+            <h2>Page 1</h2>
+            <p>This is <strong>Page 1</strong> loaded with history support!</p>
+            <p>The URL was pushed to history. Try clicking the back button to return to the home page.</p>
+            <p>Notice that the page state is restored from the snapshot - no server request needed!</p>
+            <div style="background: #e7f3ff; padding: 15px; border-radius: 4px; margin-top: 20px;">
+                <strong>URL pushed:</strong> Current response URL<br>
+                <strong>Scroll position:</strong> Will be restored on back navigation<br>
+                <strong>Event fired:</strong> rx:history-pushed
+            </div>
+            '''
+            self.send_html_response(response_html)
+
+        elif path == '/page2':
+            response_html = '''
+            <h2>Page 2 - Custom URL</h2>
+            <p>This is <strong>Page 2</strong> with a custom URL in the address bar!</p>
+            <p>The browser URL is set to <code>/custom-page-2-url</code> instead of <code>/page2</code>.</p>
+            <p>This demonstrates the <code>rx-push-url="/custom-url"</code> feature.</p>
+            <div style="background: #fff3cd; padding: 15px; border-radius: 4px; margin-top: 20px;">
+                <strong>Actual endpoint:</strong> /page2<br>
+                <strong>Browser URL:</strong> /custom-page-2-url<br>
+                <strong>Use case:</strong> Clean URLs for SEO
+            </div>
+            '''
+            self.send_html_response(response_html)
+
+        elif path == '/page3':
+            response_html = '''
+            <h2>Page 3 - Replace Mode</h2>
+            <p>This is <strong>Page 3</strong> using <code>rx-replace-url</code>!</p>
+            <p>Instead of pushing a new history entry, this <em>replaces</em> the current one.</p>
+            <p>Try clicking the back button - it will skip this page and go directly to the previous page.</p>
+            <div style="background: #f8d7da; padding: 15px; border-radius: 4px; margin-top: 20px;">
+                <strong>Mode:</strong> Replace (not push)<br>
+                <strong>Back button:</strong> Skips this page<br>
+                <strong>Event fired:</strong> rx:history-replaced<br>
+                <strong>Use case:</strong> Filters, tabs, or temporary states
+            </div>
+            '''
+            self.send_html_response(response_html)
+
+        elif path == '/page4':
+            response_html = '''
+            <h2>Page 4 - No Custom Title</h2>
+            <p>This is <strong>Page 4</strong> without a custom title.</p>
+            <p>The page title remains unchanged when navigating to this page.</p>
+            <p>Only the URL is updated in the browser history.</p>
+            <ul>
+                <li>URL pushed to history: ✓</li>
+                <li>Custom title: ✗ (keeps current title)</li>
+                <li>Snapshot created: ✓</li>
+                <li>Scroll restoration: ✓</li>
+            </ul>
+            <div style="background: #d1ecf1; padding: 15px; border-radius: 4px; margin-top: 20px;">
+                <strong>Note:</strong> You can use <code>rx-push-title</code> to set a custom title.
+            </div>
+            '''
+            self.send_html_response(response_html)
+
+        # Trigger demo endpoints
+        elif path == '/trigger/once':
+            self.send_html_response(
+                f'<strong style="color: #28a745;">Success!</strong> This button will not work again. (Triggered at {datetime.now().strftime("%H:%M:%S")})'
+            )
+
+        elif path == '/trigger/changed':
+            form_data = urllib.parse.parse_qs(body.decode('utf-8'))
+            text = form_data.get('text', [''])[0]
+            self.send_html_response(
+                f'<strong style="color: #28a745;">Value changed!</strong> New value: "{text}" (at {datetime.now().strftime("%H:%M:%S")})'
+            )
+
+        elif path == '/trigger/delayed':
+            self.send_html_response(
+                f'<strong style="color: #17a2b8;">Delayed trigger fired!</strong> You hovered 1 second ago. (at {datetime.now().strftime("%H:%M:%S")})'
+            )
+
+        elif path == '/trigger/ctrl-click':
+            self.send_html_response(
+                f'<strong style="color: #007bff;">Ctrl+Click detected!</strong> Filter passed. (at {datetime.now().strftime("%H:%M:%S")})'
+            )
+
+        elif path == '/trigger/shift-click':
+            self.send_html_response(
+                f'<strong style="color: #6c757d;">Shift+Click detected!</strong> Filter passed. (at {datetime.now().strftime("%H:%M:%S")})'
+            )
+
+        elif path == '/trigger/combo':
+            self.send_html_response(
+                f'<strong style="color: #ffc107;">Ctrl+Click with delay!</strong> Both filter and delay worked. (at {datetime.now().strftime("%H:%M:%S")})'
+            )
+
+        elif path == '/trigger/hover-once':
+            self.send_html_response(
+                f'<strong style="color: #ff6b6b;">Content loaded on first hover!</strong> This won\'t load again. (at {datetime.now().strftime("%H:%M:%S")})'
+            )
+
         else:
             self.send_error(404, "Endpoint not found")
 
